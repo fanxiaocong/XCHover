@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1E2BE0EE23CD92AB00AE57A3 /* UIView+XCHover.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D0FA31F98437600A86077 /* UIView+XCHover.m */; };
 		1E2D0F711F98433B00A86077 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D0F701F98433B00A86077 /* AppDelegate.m */; };
 		1E2D0F741F98433B00A86077 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1E2D0F731F98433B00A86077 /* ViewController.m */; };
 		1E2D0F771F98433B00A86077 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1E2D0F751F98433B00A86077 /* Main.storyboard */; };
@@ -279,6 +280,7 @@
 			files = (
 				1E2D0F741F98433B00A86077 /* ViewController.m in Sources */,
 				1E2D0F7F1F98433B00A86077 /* main.m in Sources */,
+				1E2BE0EE23CD92AB00AE57A3 /* UIView+XCHover.m in Sources */,
 				1E2D0F711F98433B00A86077 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

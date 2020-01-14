@@ -7,23 +7,23 @@
 //
 
 #import "ViewController.h"
+#import "UIView+XCHover.h"
 
 @interface ViewController ()
+
+@property (weak, nonatomic) IBOutlet UILabel *hoverWindowLB;
+@property (weak, nonatomic) IBOutlet UILabel *hoverSuperLB;
 
 @end
 
 @implementation ViewController
 
-- (void)viewDidLoad {
+- (void)viewDidLoad
+{
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+    
+    [self.hoverSuperLB hoverInSuperViewOffset:0];
+    [self.hoverWindowLB hoverInWindow];
 }
-
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
 
 @end
