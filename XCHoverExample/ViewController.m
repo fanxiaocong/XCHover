@@ -22,7 +22,7 @@
 {
     [super viewDidLoad];
     
-    [self.hoverSuperLB hoverInSuperViewOffset:0];
+    [self.hoverSuperLB hoverInSuperView];
     [self.hoverWindowLB hoverInWindow];
 }
 

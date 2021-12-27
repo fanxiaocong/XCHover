@@ -9,12 +9,8 @@
 #import "UIView+XCHover.h"
 #import <objc/runtime.h>
 
-// 悬浮后，距离边缘的距离
-static CGFloat const hoverEdgeMargin  = 10.f;
-
 #define SELF_WIDTH  self.bounds.size.width
 #define SELF_HEIGHT self.bounds.size.height
-
 
 @implementation UIView (XCHover)
 
@@ -22,44 +18,47 @@ static CGFloat const hoverEdgeMargin  = 10.f;
 
 - (void)hoverInSuperView
 {
-    [self hoverInSuperViewOffset:hoverEdgeMargin];
+    [self hoverInSuperViewWithVInsets:UIEdgeInsetsZero];
 }
 
-- (void)hoverInSuperViewOffset:(CGFloat)offset
+- (void)hoverInSuperViewWithVInsets:(UIEdgeInsets)vInsets
 {
-    [self hoverInView:self.superview offset:offset];
+    [self hoverInView:self.superview vInsets:vInsets];
 }
+
 
 - (void)hoverInWindow
 {
-    [self hoverInWindowOffset:hoverEdgeMargin];
+    UIEdgeInsets insets = UIEdgeInsetsMake([self _fetchTopHeight], 0, [self _fetchBottomHeight], 0);
+    [self hoverInWindowWithVInsets:insets];
 }
 
-- (void)hoverInWindowOffset:(CGFloat)offset
+- (void)hoverInWindowWithVInsets:(UIEdgeInsets)vInsets
 {
-    [self hoverInView:[UIApplication sharedApplication].keyWindow offset:offset];
+    [self hoverInView:[UIApplication sharedApplication].keyWindow vInsets:vInsets];
 }
+
 
 - (void)hoverInView:(UIView *)view
 {
-    [self hoverInView:view offset:hoverEdgeMargin];
+    [self hoverInView:view vInsets:UIEdgeInsetsZero];
 }
 
-- (void)hoverInView:(UIView *)view offset:(CGFloat)offset
+- (void)hoverInView:(UIView *)view vInsets:(UIEdgeInsets)vInsets
 {
     /// 将视图添加到容器视图
     if (self.superview != view) {
         [view addSubview:self];
-        self.center = CGPointMake(offset + SELF_WIDTH * 0.5,
-                                  offset + SELF_HEIGHT * 0.5);
+        self.center = CGPointMake(SELF_WIDTH * 0.5,
+                                  vInsets.top + SELF_HEIGHT * 0.5);
     }
-    
+
     /// 添加 滑动手势
     self.superview.userInteractionEnabled = YES;
     self.userInteractionEnabled = YES;
     // 绑定 offset 值
-    [self setOffset:offset];
-    
+    [self setVInsets:vInsets];
+
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(pan:)];
     [self addGestureRecognizer:pan];
 }
@@ -68,9 +67,10 @@ static CGFloat const hoverEdgeMargin  = 10.f;
 
 - (void)pan:(UIPanGestureRecognizer *)pan
 {
+    CGRect rect = self.bounds;
     CGPoint location = [pan locationInView:self.superview];
     // 偏移值
-    CGFloat offset = [pan.view offset];
+    UIEdgeInsets vInsets = [pan.view vInsets];
     switch (pan.state) {
         case UIGestureRecognizerStateChanged: {
             /// 更新 view 的位置
@@ -86,44 +86,21 @@ static CGFloat const hoverEdgeMargin  = 10.f;
             CGFloat selfWidth   = SELF_WIDTH;
             CGFloat selfHeight  = SELF_HEIGHT;
             
-            // 需要进行悬浮的最小距离，当超过这个距离的时候，就需要进行悬浮操作
-            CGFloat magneticDistance = superHeight * 0.15;
-            
-            // 最终显示的位置
-            CGPoint destPosition;
-            
-            if (location.y < magneticDistance) {   //上面
-                destPosition = CGPointMake(location.x, selfWidth * 0.5 + offset);
-            } else if (location.y > superHeight - magneticDistance) {   //下面
-                destPosition = CGPointMake(location.x, superHeight - selfHeight * 0.5 - offset);
-            } else if (location.x > superWidth * 0.5) {   //右边
-                destPosition = CGPointMake(superWidth - (selfWidth * 0.5 + offset), location.y);
-            } else {   //左边
-                destPosition = CGPointMake(selfWidth * 0.5 + offset, location.y);
+            if (location.y < vInsets.top + selfHeight*0.5) {
+                location.y = vInsets.top + selfHeight*0.5;
+            } else if (location.y > (superHeight-selfHeight*0.5-vInsets.bottom)) {
+                location.y = superHeight-selfHeight*0.5-vInsets.bottom;
             }
             
-            // 最大、最小 X/Y 边界值
-            CGFloat maxDestPositionX = superWidth - offset - selfWidth * 0.5;
-            CGFloat minDestPositionX = offset + selfWidth * 0.5;
-            CGFloat maxDestPositionY = superHeight - offset - selfHeight * 0.5;
-            CGFloat minDestPositionY = offset + selfHeight * 0.5;
-            
-            destPosition.x = MIN(destPosition.x, maxDestPositionX);
-            destPosition.x = MAX(destPosition.x, minDestPositionX);
-            destPosition.y = MIN(destPosition.y, maxDestPositionY);
-            destPosition.y = MAX(destPosition.y, minDestPositionY);
-            
-            self.layer.position = destPosition;
-            
-            /// 开始动画
-            CABasicAnimation *anim = [CABasicAnimation animationWithKeyPath:@"position"];
-            anim.removedOnCompletion = NO;
-            anim.fromValue = [NSValue valueWithCGPoint:location];
-            anim.toValue   = [NSValue valueWithCGPoint:destPosition];
-            anim.duration  = .5f;
-            anim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-            [self.layer addAnimation:anim forKey:NULL];
-            
+            if (location.x > superWidth * 0.5) {
+                location.x = superWidth - selfWidth * 0.5;
+            } else {
+                location.x = selfWidth * 0.5;
+            }
+            rect.origin = CGPointMake(location.x-selfWidth*0.5, location.y-selfHeight*0.5);
+            [UIView animateWithDuration:0.1 animations:^{
+                self.frame = rect;
+            }];
             break;
         }
         default:
@@ -133,14 +110,31 @@ static CGFloat const hoverEdgeMargin  = 10.f;
 
 #pragma mark - 🔒 👀 Privite Method 👀
 
-- (void)setOffset:(CGFloat)offset
+/// 顶部距离
+- (CGFloat)_fetchTopHeight
 {
-    objc_setAssociatedObject(self, @selector(offset), @(offset), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return [[UIApplication sharedApplication] statusBarFrame].size.height;
 }
 
-- (CGFloat)offset
+/// 底部距离
+- (CGFloat)_fetchBottomHeight
 {
-    return [objc_getAssociatedObject(self, _cmd) floatValue];
+   if (@available(iOS 11.0, *)) {
+       UIWindow *mainWindow = [[[UIApplication sharedApplication] delegate] window];
+       return mainWindow.safeAreaInsets.bottom;
+   }
+   return 0;
+}
+
+- (void)setVInsets:(UIEdgeInsets)vInsets
+{
+    objc_setAssociatedObject(self, @selector(vInsets), [NSValue valueWithUIEdgeInsets:vInsets], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (UIEdgeInsets)vInsets
+{
+    NSValue *vInsetsValue = objc_getAssociatedObject(self, _cmd);
+    return [vInsetsValue UIEdgeInsetsValue];
 }
 
 @end
